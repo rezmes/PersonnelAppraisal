@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "personnel-appraisal-client-side-solution",
+    "id": "03ce0356-ae3f-4271-a279-008adf33acd4",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true
+  },
+  "paths": {
+    "zippedPackage": "solution/personnel-appraisal.sppkg"
+  }
+}

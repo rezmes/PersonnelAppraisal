@@ -1,0 +1,11 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "isCreatingSolution": true,
+    "environment": "onprem19",
+    "version": "1.10.0",
+    "libraryName": "personnel-appraisal",
+    "libraryId": "03ce0356-ae3f-4271-a279-008adf33acd4",
+    "packageManager": "npm",
+    "componentType": "webpart"
+  }
+}
