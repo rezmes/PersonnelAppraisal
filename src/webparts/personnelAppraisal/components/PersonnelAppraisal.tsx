@@ -8,6 +8,7 @@ import {
   SpinnerSize,
   Label,
 } from "office-ui-fabric-react";
+import { IPersonnelAppraisalProps } from "./IPersonnelAppraisalProps";
 
 interface IAppraisalFormState {
   employees: IDropdownOption[];
@@ -19,10 +20,10 @@ interface IAppraisalFormState {
 }
 
 export default class PersonnelAppraisal extends React.Component<
-  {},
+  IPersonnelAppraisalProps,
   IAppraisalFormState
 > {
-  constructor(props: {}) {
+  constructor(props: IPersonnelAppraisalProps) {
     super(props);
 
     this.state = {
@@ -37,7 +38,7 @@ export default class PersonnelAppraisal extends React.Component<
 
   componentDidMount(): void {
     sp.setup({
-      spfxContext: this.context,
+      spfxContext: (this.context as any), // Fix context typing issue
     });
     this.loadEmployees();
   }
@@ -172,6 +173,7 @@ export default class PersonnelAppraisal extends React.Component<
 
     return (
       <div>
+        <h3>{this.props.description}</h3> {/* Use the description prop */}
         {isLoading && <Spinner size={SpinnerSize.large} label="Loading..." />}
         {errorMessage && <Label style={{ color: "red" }}>{errorMessage}</Label>}
 
@@ -223,5 +225,3 @@ export default class PersonnelAppraisal extends React.Component<
     );
   }
 }
-
-
