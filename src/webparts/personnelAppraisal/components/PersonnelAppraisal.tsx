@@ -53,18 +53,23 @@ export default class PersonnelAppraisal extends React.Component<
   private async loadEmployees(): Promise<void> {
     try {
       this.setState({ isLoading: true });
-      const currentUser = await sp.web.currentUser.get();
+      // const currentUser = await sp.web.currentUser.get();
+      // console.log('current User Response: ',currentUser)
+      const currentUser = await sp.web.siteUsers.getById(this.props.context.pageContext.legacyPageContext.userId).get();
+      console.log("Fallback Current User:", currentUser);
 
-
-
-      const currentUserLoginName = "i:0#.w|ipr-co\\mesgari-m"; // Replace with the actual user login
+      // const currentUserLoginName = "i:0#.w|ipr-co\\mesgari-m"; // Replace with the actual user login
+      // const employees = await sp.web.lists
+      //   .getByTitle("پرسنل معاونت مکانیک") // Replace with your actual list title
+      //   .items.select("ID", "Title", "FirstName", "Department", "MechDepartment/Label", "Evaluator/Name")
+      //   .expand("MechDepartment","Evaluator")
+      //   // .filter(`Evaluator/Name eq '${currentUser}'`)
+      //   .filter(`Evaluator/Name eq '${currentUser.LoginName}'`)
+      //   .get();
       const employees = await sp.web.lists
-        .getByTitle("پرسنل معاونت مکانیک") // Replace with your actual list title
-        .items.select("ID", "Title", "FirstName", "Department", "Evaluator/Name")
-        .expand("Evaluator")
-        .filter(`Evaluator/Name eq '${currentUserLoginName}'`)
-        .get();
-
+      .getByTitle("پرسنل معاونت مکانیک")
+      .items.select("ID", "MechDepartment").expand("MechDepartment")
+      .get();
       console.log("Filtered employees:", employees);
 
 
@@ -73,7 +78,9 @@ export default class PersonnelAppraisal extends React.Component<
       const employeeOptions: IEmployeeOption[] = employees.map((emp) => ({
         key: emp.ID,
         text: `${emp.FirstName} ${emp.Title}`,
-        department: emp.Department, // Assuming "Department" is a field in the list
+        department: emp.MechDepartment && emp.MechDepartment.Label
+  ? emp.MechDepartment.Label
+  : "",
       }));
 
       this.setState({ employees: employeeOptions, isLoading: false });
@@ -118,11 +125,15 @@ export default class PersonnelAppraisal extends React.Component<
     if (!this.state.selectedEmployee || !selectedDepartment) return;
 
     try {
+      console.log("Selected Department:", selectedDepartment);
+      // console.log("Questions Fetched:", questions);
       this.setState({ isLoading: true });
 
       const questions = await sp.web.lists
         .getByTitle("QuestionBank")
-        .items.filter(`Department eq '${selectedDepartment}'`)
+        .items.select("ID", "QuestionText", "QuestionWeight", "Department/Label")
+        .expand("Department")
+        .filter(`Department/Label eq '${selectedDepartment}'`)
         .get();
 
       this.setState({
