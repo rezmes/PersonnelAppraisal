@@ -9,6 +9,9 @@ import {
   Label,
 } from "office-ui-fabric-react";
 import { IPersonnelAppraisalProps } from "./IPersonnelAppraisalProps";
+interface IEmployeeOption extends IDropdownOption {
+  department: string; // Add department property
+}
 
 interface IAppraisalFormState {
   employees: IDropdownOption[];
@@ -18,6 +21,9 @@ interface IAppraisalFormState {
   isLoading: boolean;
   errorMessage: string | null;
 }
+
+import 'core-js/es6/array';
+
 
 export default class PersonnelAppraisal extends React.Component<
   IPersonnelAppraisalProps,
@@ -38,22 +44,36 @@ export default class PersonnelAppraisal extends React.Component<
 
   componentDidMount(): void {
     sp.setup({
-      spfxContext: (this.context as any), // Fix context typing issue
+      spfxContext: this.props.context, // Use the context
     });
     this.loadEmployees();
   }
 
+
   private async loadEmployees(): Promise<void> {
     try {
       this.setState({ isLoading: true });
+      const currentUser = await sp.web.currentUser.get();
+
+
+
+      const currentUserLoginName = "i:0#.w|ipr-co\\mesgari-m"; // Replace with the actual user login
       const employees = await sp.web.lists
-        .getByTitle("Personnel")
-        .items.select("ID", "FirstName", "LastName")
+        .getByTitle("پرسنل معاونت مکانیک") // Replace with your actual list title
+        .items.select("ID", "Title", "FirstName", "Department", "Evaluator/Name")
+        .expand("Evaluator")
+        .filter(`Evaluator/Name eq '${currentUserLoginName}'`)
         .get();
 
-      const employeeOptions = employees.map((emp) => ({
+      console.log("Filtered employees:", employees);
+
+
+
+
+      const employeeOptions: IEmployeeOption[] = employees.map((emp) => ({
         key: emp.ID,
-        text: `${emp.FirstName} ${emp.LastName}`,
+        text: `${emp.FirstName} ${emp.Title}`,
+        department: emp.Department, // Assuming "Department" is a field in the list
       }));
 
       this.setState({ employees: employeeOptions, isLoading: false });
@@ -66,28 +86,43 @@ export default class PersonnelAppraisal extends React.Component<
     }
   }
 
+
+
+
+
   private handleEmployeeChange = (
     event: React.FormEvent<HTMLDivElement>,
-    option?: IDropdownOption
+    option?: IEmployeeOption // Use the extended type
   ): void => {
     if (option) {
+      const filteredEmployees = this.state.employees.filter(emp => emp.key === option.key);
+      const selectedEmployee = filteredEmployees.length > 0 ? filteredEmployees[0] : null;
+
+      let selectedDepartment = "";
+      if (selectedEmployee && "department" in selectedEmployee) {
+        selectedDepartment = (selectedEmployee as IEmployeeOption).department;
+      }
+
       this.setState(
         { selectedEmployee: option.key as string },
-        this.loadQuestions
+        () => this.loadQuestions(selectedDepartment) // Pass it here
       );
     }
   };
 
-  private async loadQuestions(): Promise<void> {
-    if (!this.state.selectedEmployee) return;
+
+
+
+
+  private async loadQuestions(selectedDepartment?: string): Promise<void> {
+    if (!this.state.selectedEmployee || !selectedDepartment) return;
 
     try {
       this.setState({ isLoading: true });
 
       const questions = await sp.web.lists
         .getByTitle("QuestionBank")
-        .items.filter(`Department eq 'HR'`)
-        .select("ID", "QuestionText", "QuestionWeight")
+        .items.filter(`Department eq '${selectedDepartment}'`)
         .get();
 
       this.setState({
@@ -107,6 +142,7 @@ export default class PersonnelAppraisal extends React.Component<
       console.error(error);
     }
   }
+
 
   private handleScoreChange = (questionId: number, score: number): void => {
     this.setState((prevState) => ({
