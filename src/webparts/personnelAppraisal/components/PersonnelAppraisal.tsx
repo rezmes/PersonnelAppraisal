@@ -1,165 +1,227 @@
-// import * as React from 'react';
-// import styles from './PersonnelAppraisal.module.scss';
-// import { IPersonnelAppraisalProps } from './IPersonnelAppraisalProps';
-// import { escape } from '@microsoft/sp-lodash-subset';
-
-// export default class PersonnelAppraisal extends React.Component < IPersonnelAppraisalProps, {} > {
-//   public render(): React.ReactElement<IPersonnelAppraisalProps> {
-//     return(
-//       <div className = { styles.personnelAppraisal } >
-//   <div className={styles.container}>
-//     <div className={styles.row}>
-//       <div className={styles.column}>
-//         <span className={styles.title}>Welcome to SharePoint!</span>
-//         <p className={styles.subTitle}>Customize SharePoint experiences using Web Parts.</p>
-//         <p className={styles.description}>{escape(this.props.description)}</p>
-//         <a href='https://aka.ms/spfx' className={styles.button}>
-//           <span className={styles.label}>Learn more</span>
-//         </a>
-//       </div>
-//     </div>
-//   </div>
-//       </div >
-//     );
-//   }
-// }
 import * as React from "react";
-import { Dropdown, IDropdownOption, TextField, PrimaryButton } from "office-ui-fabric-react";
+import { sp } from "@pnp/sp/presets/all";
+import {
+  Dropdown,
+  IDropdownOption,
+  PrimaryButton,
+  Spinner,
+  SpinnerSize,
+  Label,
+} from "office-ui-fabric-react";
 
-export interface IEmployeeEvaluationProps {}
-export interface IEmployeeEvaluationState {
+interface IAppraisalFormState {
   employees: IDropdownOption[];
-  selectedEmployee: string;
-  selectedEvaluationPeriod: string;
-  evaluator: string;
-  scores: { [key: string]: number };
-  questions: { question: string; id: string }[];
+  selectedEmployee: string | undefined;
+  questions: { id: number; text: string; weight: number }[];
+  scores: { [questionId: number]: number };
+  isLoading: boolean;
+  errorMessage: string | null;
 }
 
-class EmployeeEvaluation extends React.Component<IEmployeeEvaluationProps, IEmployeeEvaluationState> {
-  constructor(props: IEmployeeEvaluationProps) {
+export default class PersonnelAppraisal extends React.Component<
+  {},
+  IAppraisalFormState
+> {
+  constructor(props: {}) {
     super(props);
 
     this.state = {
       employees: [],
-      selectedEmployee: "",
-      selectedEvaluationPeriod: "",
-      evaluator: "Current User",
-      scores: {},
+      selectedEmployee: undefined,
       questions: [],
+      scores: {},
+      isLoading: false,
+      errorMessage: null,
     };
   }
 
-  componentDidMount() {
-    // Simulate loading employees for the dropdown
-    this.setState({
-      employees: [
-        { key: "emp1", text: "John Doe (HR)" },
-        { key: "emp2", text: "Jane Smith (IT)" },
-      ],
+  componentDidMount(): void {
+    sp.setup({
+      spfxContext: this.context,
     });
+    this.loadEmployees();
   }
 
-  handleEmployeeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
+  private async loadEmployees(): Promise<void> {
+    try {
+      this.setState({ isLoading: true });
+      const employees = await sp.web.lists
+        .getByTitle("Personnel")
+        .items.select("ID", "FirstName", "LastName")
+        .get();
 
-    // Sync selected employee and simulate loading questions
-    this.setState({ selectedEmployee: value });
+      const employeeOptions = employees.map((emp) => ({
+        key: emp.ID,
+        text: `${emp.FirstName} ${emp.LastName}`,
+      }));
 
-    const department = value.indexOf("HR") !== -1 ? "HR" : "IT"; // Use indexOf instead of includes
+      this.setState({ employees: employeeOptions, isLoading: false });
+    } catch (error) {
+      this.setState({
+        errorMessage: "Error loading employees.",
+        isLoading: false,
+      });
+      console.error(error);
+    }
+  }
 
-    // Simulate loading questions for the selected department
-    this.setState({
-      questions: department === "HR"
-        ? [{ id: "q1", question: "Communication Skills" }]
-        : [{ id: "q2", question: "Technical Expertise" }],
-    });
+  private handleEmployeeChange = (
+    event: React.FormEvent<HTMLDivElement>,
+    option?: IDropdownOption
+  ): void => {
+    if (option) {
+      this.setState(
+        { selectedEmployee: option.key as string },
+        this.loadQuestions
+      );
+    }
   };
 
+  private async loadQuestions(): Promise<void> {
+    if (!this.state.selectedEmployee) return;
 
-  handleEvaluationPeriodChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ selectedEvaluationPeriod: event.target.value });
-  };
+    try {
+      this.setState({ isLoading: true });
 
-  handleScoreChange = (questionId: string, score: number) => {
+      const questions = await sp.web.lists
+        .getByTitle("QuestionBank")
+        .items.filter(`Department eq 'HR'`)
+        .select("ID", "QuestionText", "QuestionWeight")
+        .get();
+
+      this.setState({
+        questions: questions.map((q) => ({
+          id: q.ID,
+          text: q.QuestionText,
+          weight: q.QuestionWeight,
+        })),
+        scores: {},
+        isLoading: false,
+      });
+    } catch (error) {
+      this.setState({
+        errorMessage: "Error loading questions.",
+        isLoading: false,
+      });
+      console.error(error);
+    }
+  }
+
+  private handleScoreChange = (questionId: number, score: number): void => {
     this.setState((prevState) => ({
-      scores: { ...prevState.scores, [questionId]: score },
+      scores: {
+        ...prevState.scores,
+        [questionId]: score,
+      },
     }));
   };
 
-  handleSave = () => {
-    const { selectedEmployee, selectedEvaluationPeriod, evaluator, scores } = this.state;
+  private handleSubmit: () => Promise<void> = async (): Promise<void> => {
+    const { selectedEmployee, scores, questions } = this.state;
 
-    console.log("Saving Evaluation:");
-    console.log("Employee:", selectedEmployee);
-    console.log("Evaluation Period:", selectedEvaluationPeriod);
-    console.log("Evaluator:", evaluator);
-    console.log("Scores:", scores);
+    if (!selectedEmployee) {
+      this.setState({ errorMessage: "Please select an employee." });
+      return;
+    }
 
-    // Logic to save to SharePoint would go here
-    alert("Evaluation Saved!");
+    if (Object.keys(scores).length !== questions.length) {
+      this.setState({ errorMessage: "Please rate all questions." });
+      return;
+    }
+
+    try {
+      this.setState({ isLoading: true, errorMessage: null });
+
+      const batch = sp.web.createBatch();
+      const evaluationPeriod = "Q1-2024";
+
+      questions.forEach((question) => {
+        const weightedScore = (scores[question.id] / 5) * question.weight;
+
+        sp.web.lists.getByTitle("EvaluationResults").items.inBatch(batch).add({
+          EmployeeID: selectedEmployee,
+          QuestionDescription: question.text,
+          Score: scores[question.id],
+          WeightedScore: weightedScore,
+          EvaluationPeriod: evaluationPeriod,
+        });
+      });
+
+      await batch.execute();
+
+      this.setState({ isLoading: false });
+      alert("Evaluation submitted successfully.");
+    } catch (error) {
+      this.setState({
+        errorMessage: "Error submitting evaluation.",
+        isLoading: false,
+      });
+      console.error(error);
+    }
   };
 
-  render() {
-    const { employees, selectedEmployee, selectedEvaluationPeriod, questions } = this.state;
+  render(): React.ReactElement<any> {
+    const {
+      employees,
+      selectedEmployee,
+      questions,
+      scores,
+      isLoading,
+      errorMessage,
+    } = this.state;
 
     return (
       <div>
-        <h3>Employee Evaluation Form</h3>
+        {isLoading && <Spinner size={SpinnerSize.large} label="Loading..." />}
+        {errorMessage && <Label style={{ color: "red" }}>{errorMessage}</Label>}
 
-        <TextField
-          label="Evaluator"
-          value={this.state.evaluator}
-          readOnly
-        />
-
-        <TextField
-          label="Evaluation Period"
-          value={selectedEvaluationPeriod}
-          onChange={this.handleEvaluationPeriodChange}
-          list="period-options"
-        />
-        <datalist id="period-options">
-          <option value="Quarter 1, 2023" />
-          <option value="Quarter 2, 2023" />
-        </datalist>
-
-        <TextField
-          label="Employee"
-          value={selectedEmployee}
+        <Dropdown
+          label="Select Employee"
+          options={employees}
+          selectedKey={selectedEmployee}
           onChange={this.handleEmployeeChange}
-          list="employee-options"
+          placeHolder="Choose an employee"
         />
-        <datalist id="employee-options">
-          {employees.map((emp, idx) => (
-            <option key={idx} value={emp.text} />
-          ))}
-        </datalist>
 
-        <div>
-          <h4>Evaluation Questions</h4>
-          {questions.map((q) => (
-            <div key={q.id}>
-              <p>{q.question}</p>
-              {[1, 2, 3, 4, 5].map((score) => (
-                <label key={score}>
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    value={score}
-                    onChange={() => this.handleScoreChange(q.id, score)}
-                  />
-                  {score}
-                </label>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        <PrimaryButton text="Save Evaluation" onClick={this.handleSave} />
+        {questions.length > 0 && (
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {questions.map((question) => (
+                  <tr key={question.id}>
+                    <td>{question.text}</td>
+                    <td>
+                      {[1, 2, 3, 4, 5].map((score) => (
+                        <label key={score}>
+                          <input
+                            type="radio"
+                            name={`question-${question.id}`}
+                            value={score}
+                            checked={scores[question.id] === score}
+                            onChange={() =>
+                              this.handleScoreChange(question.id, score)
+                            }
+                          />
+                          {score}
+                        </label>
+                      ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <PrimaryButton text="Submit" onClick={this.handleSubmit} />
+          </div>
+        )}
       </div>
     );
   }
 }
 
-export default EmployeeEvaluation;
+
