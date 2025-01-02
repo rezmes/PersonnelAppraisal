@@ -22,8 +22,7 @@ interface IAppraisalFormState {
   errorMessage: string | null;
 }
 
-import 'core-js/es6/array';
-
+import "core-js/es6/array";
 
 export default class PersonnelAppraisal extends React.Component<
   IPersonnelAppraisalProps,
@@ -49,38 +48,45 @@ export default class PersonnelAppraisal extends React.Component<
     this.loadEmployees();
   }
 
-
   private async loadEmployees(): Promise<void> {
     try {
       this.setState({ isLoading: true });
       // const currentUser = await sp.web.currentUser.get();
       // console.log('current User Response: ',currentUser)
-      const currentUser = await sp.web.siteUsers.getById(this.props.context.pageContext.legacyPageContext.userId).get();
+      const currentUser = await sp.web.siteUsers
+        .getById(this.props.context.pageContext.legacyPageContext.userId)
+        .get();
       console.log("Fallback Current User:", currentUser);
 
-      // const currentUserLoginName = "i:0#.w|ipr-co\\mesgari-m"; // Replace with the actual user login
-      // const employees = await sp.web.lists
-      //   .getByTitle("پرسنل معاونت مکانیک") // Replace with your actual list title
-      //   .items.select("ID", "Title", "FirstName", "Department", "MechDepartment/Label", "Evaluator/Name")
-      //   .expand("MechDepartment","Evaluator")
-      //   // .filter(`Evaluator/Name eq '${currentUser}'`)
-      //   .filter(`Evaluator/Name eq '${currentUser.LoginName}'`)
-      //   .get();
+      const currentUserLoginName = "i:0#.w|ipr-co\\mesgari-m"; // Replace with the actual user login
       const employees = await sp.web.lists
-      .getByTitle("پرسنل معاونت مکانیک")
-      .items.select("ID", "MechDepartment").expand("MechDepartment")
-      .get();
-      console.log("Filtered employees:", employees);
+        .getByTitle("پرسنل معاونت مکانیک") // Replace with your actual list title
+        .items.select(
+          "ID",
+          "Title",
+          "FirstName",
+          "Department",
+          "MechDepartment/Label",
+          "Evaluator/Name"
+        )
+        .expand("MechDepartment", "Evaluator")
+        .filter(`Evaluator/Name eq '${currentUser.LoginName}'`)
+        .get();
 
-
-
+      // .filter(`Evaluator/Name eq '${currentUser}'`)
+      // const employees = await sp.web.lists
+      // .getByTitle("                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ")
+      // .items.select("ID", "MechDepartment").expand("MechDepartment")
+      // .get();
+      // console.log("Filtered employees:", employees);
 
       const employeeOptions: IEmployeeOption[] = employees.map((emp) => ({
         key: emp.ID,
         text: `${emp.FirstName} ${emp.Title}`,
-        department: emp.MechDepartment && emp.MechDepartment.Label
-  ? emp.MechDepartment.Label
-  : "",
+        department:
+          emp.MechDepartment && emp.MechDepartment.Label
+            ? emp.MechDepartment.Label
+            : "",
       }));
 
       this.setState({ employees: employeeOptions, isLoading: false });
@@ -93,17 +99,16 @@ export default class PersonnelAppraisal extends React.Component<
     }
   }
 
-
-
-
-
   private handleEmployeeChange = (
     event: React.FormEvent<HTMLDivElement>,
     option?: IEmployeeOption // Use the extended type
   ): void => {
     if (option) {
-      const filteredEmployees = this.state.employees.filter(emp => emp.key === option.key);
-      const selectedEmployee = filteredEmployees.length > 0 ? filteredEmployees[0] : null;
+      const filteredEmployees = this.state.employees.filter(
+        (emp) => emp.key === option.key
+      );
+      const selectedEmployee =
+        filteredEmployees.length > 0 ? filteredEmployees[0] : null;
 
       let selectedDepartment = "";
       if (selectedEmployee && "department" in selectedEmployee) {
@@ -117,10 +122,6 @@ export default class PersonnelAppraisal extends React.Component<
     }
   };
 
-
-
-
-
   private async loadQuestions(selectedDepartment?: string): Promise<void> {
     if (!this.state.selectedEmployee || !selectedDepartment) return;
 
@@ -131,7 +132,12 @@ export default class PersonnelAppraisal extends React.Component<
 
       const questions = await sp.web.lists
         .getByTitle("QuestionBank")
-        .items.select("ID", "QuestionText", "QuestionWeight", "Department/Label")
+        .items.select(
+          "ID",
+          "QuestionText",
+          "QuestionWeight",
+          "Department/Label"
+        )
         .expand("Department")
         .filter(`Department/Label eq '${selectedDepartment}'`)
         .get();
@@ -153,7 +159,6 @@ export default class PersonnelAppraisal extends React.Component<
       console.error(error);
     }
   }
-
 
   private handleScoreChange = (questionId: number, score: number): void => {
     this.setState((prevState) => ({
@@ -223,7 +228,6 @@ export default class PersonnelAppraisal extends React.Component<
         <h3>{this.props.description}</h3> {/* Use the description prop */}
         {isLoading && <Spinner size={SpinnerSize.large} label="Loading..." />}
         {errorMessage && <Label style={{ color: "red" }}>{errorMessage}</Label>}
-
         <Dropdown
           label="Select Employee"
           options={employees}
@@ -231,7 +235,6 @@ export default class PersonnelAppraisal extends React.Component<
           onChange={this.handleEmployeeChange}
           placeHolder="Choose an employee"
         />
-
         {questions.length > 0 && (
           <div>
             <table>
