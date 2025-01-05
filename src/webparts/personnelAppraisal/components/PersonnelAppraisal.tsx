@@ -487,14 +487,38 @@ export default class PersonnelAppraisal extends React.Component<
 
       console.log("Filtered employees:", employees);
 
-      const employeeOptions: IEmployeeOption[] = employees.map((emp) => {
-        return {
-          key: emp.ID.toString(),
-          text: `${emp.FirstName} ${emp.Title}`,
-          department: emp.Department,
-          departmentGuid: emp.MechDepartment.TermGuid,
-        };
-      });
+      const evaluationPeriod = "Q1-2024";
+
+      const evaluatedEmployees = await sp.web.lists
+        .getByTitle("EvaluationResults")
+        .items.select("EmployeeID/ID", "EvaluationPeriod")
+        .expand("EmployeeID") // Expand the EmployeeID lookup field
+        .filter(`EvaluationPeriod eq '${evaluationPeriod}'`)
+        .get();
+
+      console.log("Evaluated employees:", evaluatedEmployees);
+
+      const evaluatedEmployeeIds = evaluatedEmployees.map(
+        (evalItem) => evalItem.EmployeeID.ID
+      );
+
+      const employeeOptions: IEmployeeOption[] = employees
+        .filter((emp) => evaluatedEmployeeIds.indexOf(emp.ID) === -1)
+        .map((emp) => {
+          let departmentText = "";
+          let departmentTermGuid = "";
+          if (emp.MechDepartment && emp.MechDepartment.Label) {
+            departmentText = emp.MechDepartment.Label;
+            departmentTermGuid = emp.MechDepartment.TermGuid;
+          }
+
+          return {
+            key: emp.ID,
+            text: `${emp.FirstName} ${emp.Title}`,
+            department: departmentText,
+            departmentGuid: departmentTermGuid,
+          };
+        });
 
       console.log("Employee options:", employeeOptions);
       this.setState({ employees: employeeOptions, isLoading: false });
@@ -506,6 +530,48 @@ export default class PersonnelAppraisal extends React.Component<
       console.error(error);
     }
   }
+
+  // private async loadEmployees(): Promise<void> {
+  //   try {
+  //     this.setState({ isLoading: true });
+  //     const currentUser = await sp.web.currentUser.get();
+  //     console.log("Current user:", currentUser);
+
+  //     const employees = await sp.web.lists
+  //       .getByTitle("پرسنل معاونت مکانیک")
+  //       .items.select(
+  //         "ID",
+  //         "Title",
+  //         "FirstName",
+  //         "Department",
+  //         "Evaluator/Name",
+  //         "MechDepartment"
+  //       )
+  //       .expand("Evaluator")
+  //       .filter(`Evaluator/Name eq '${currentUser.LoginName}'`)
+  //       .get();
+
+  //     console.log("Filtered employees:", employees);
+
+  //     const employeeOptions: IEmployeeOption[] = employees.map((emp) => {
+  //       return {
+  //         key: emp.ID.toString(),
+  //         text: `${emp.FirstName} ${emp.Title}`,
+  //         department: emp.Department,
+  //         departmentGuid: emp.MechDepartment.TermGuid,
+  //       };
+  //     });
+
+  //     console.log("Employee options:", employeeOptions);
+  //     this.setState({ employees: employeeOptions, isLoading: false });
+  //   } catch (error) {
+  //     this.setState({
+  //       errorMessage: "Error loading employees.",
+  //       isLoading: false,
+  //     });
+  //     console.error(error);
+  //   }
+  // }
 
   // private handleEmployeeChange = (
   //   event: React.FormEvent<HTMLDivElement>,
@@ -661,6 +727,57 @@ export default class PersonnelAppraisal extends React.Component<
     }));
   };
 
+  // private handleSubmit: () => Promise<void> = async (): Promise<void> => {
+  //   const { selectedEmployee, scores, questions } = this.state;
+
+  //   if (!selectedEmployee) {
+  //     this.setState({ errorMessage: "Please select an employee." });
+  //     return;
+  //   }
+
+  //   if (Object.keys(scores).length !== questions.length) {
+  //     this.setState({ errorMessage: "Please rate all questions." });
+  //     return;
+  //   }
+
+  //   try {
+  //     this.setState({ isLoading: true, errorMessage: null });
+
+  //     const batch = sp.web.createBatch();
+  //     const evaluationPeriod = "Q1-2024";
+
+  //     questions.forEach((question) => {
+  //       const weightedScore = (scores[question.id] / 5) * question.weight;
+
+  //       // Assuming EmployeeID is a lookup field, use the proper structure for lookup fields
+  //       const item = {
+  //         EmployeeIDId: selectedEmployee, // Use the lookup field suffix 'Id'
+  //         QuestionDescription: question.text,
+  //         Score: scores[question.id],
+  //         WeightedScore: weightedScore,
+  //         EvaluationPeriod: evaluationPeriod,
+  //       };
+
+  //       console.log("Adding item to batch:", item);
+
+  //       sp.web.lists
+  //         .getByTitle("EvaluationResults")
+  //         .items.inBatch(batch)
+  //         .add(item);
+  //     });
+
+  //     await batch.execute();
+
+  //     this.setState({ isLoading: false });
+  //     alert("Evaluation submitted successfully.");
+  //   } catch (error) {
+  //     this.setState({
+  //       errorMessage: "Error submitting evaluation.",
+  //       isLoading: false,
+  //     });
+  //     console.error("Error submitting evaluation:", error);
+  //   }
+  // };
   private handleSubmit: () => Promise<void> = async (): Promise<void> => {
     const { selectedEmployee, scores, questions } = this.state;
 
@@ -683,9 +800,8 @@ export default class PersonnelAppraisal extends React.Component<
       questions.forEach((question) => {
         const weightedScore = (scores[question.id] / 5) * question.weight;
 
-        // Assuming EmployeeID is a lookup field, use the proper structure for lookup fields
         const item = {
-          EmployeeIDId: selectedEmployee, // Use the lookup field suffix 'Id'
+          EmployeeIDId: selectedEmployee,
           QuestionDescription: question.text,
           Score: scores[question.id],
           WeightedScore: weightedScore,
@@ -704,6 +820,9 @@ export default class PersonnelAppraisal extends React.Component<
 
       this.setState({ isLoading: false });
       alert("Evaluation submitted successfully.");
+
+      // Re-load employees to update the dropdown list
+      this.loadEmployees();
     } catch (error) {
       this.setState({
         errorMessage: "Error submitting evaluation.",
