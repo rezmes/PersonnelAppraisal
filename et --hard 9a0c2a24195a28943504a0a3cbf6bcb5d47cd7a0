@@ -1,0 +1,54 @@
+[33mcommit 9a0c2a24195a28943504a0a3cbf6bcb5d47cd7a0[m[33m ([m[1;36mHEAD[m[33m)[m
+Author: rezmes <rezmes@gmail.com>
+Date:   Sat Jan 4 18:05:03 2025 +0330
+
+    Questions do not load
+
+[33mcommit 8df36b833b4a312c91bf34864cad8497b4225d4e[m
+Author: rezmes <rezmes@gmail.com>
+Date:   Sat Jan 4 14:57:57 2025 +0330
+
+    git reset to '87772cfba72d62be5fad276dc7dcea4229ea264c'
+
+[33mcommit 87772cfba72d62be5fad276dc7dcea4229ea264c[m
+Author: rezmes <rezmes@gmail.com>
+Date:   Wed Jan 1 15:02:52 2025 +0330
+
+    Dropdown Works
+
+[33mcommit b0c7014dca1234c1c0c016c0ae7bee86b0777d26[m
+Author: rezmes <rezmes@gmail.com>
+Date:   Wed Jan 1 08:35:30 2025 +0330
+
+    No code Error
+
+[33mcommit b7e51782448771aa45605d29f61081c792519f62[m
+Merge: 032bc0e 01a8bab
+Author: rezmes <rezmes@gmail.com>
+Date:   Wed Jan 1 07:23:26 2025 +0330
+
+    Merge branch 'main' of github.com:rezmes/PersonnelAppraisal
+
+[33mcommit 01a8babe8316ee89a10cafdd7a00e15ad91a33b1[m
+Author: rezmes <rezmes@gmail.com>
+Date:   Tue Dec 31 23:03:07 2024 +0330
+
+    typescript error
+
+[33mcommit 032bc0e3f7db7e99c88d24f58c4a5893329157f8[m
+Author: rezmes <rezmes@gmail.com>
+Date:   Tue Dec 31 19:09:33 2024 +0330
+
+    error
+
+[33mcommit f733b4f7106b4548874e60f05ae356ec0dfadf66[m
+Author: rezmes <rezmes@gmail.com>
+Date:   Tue Dec 31 18:46:04 2024 +0330
+
+    initiating commit
+
+[33mcommit 5d3a2a8b930d8831864faff4cb96f79ae0cf20e3[m
+Author: Reza <rezmes@gmail.com>
+Date:   Tue Dec 31 17:26:55 2024 +0330
+
+    Initial commit
