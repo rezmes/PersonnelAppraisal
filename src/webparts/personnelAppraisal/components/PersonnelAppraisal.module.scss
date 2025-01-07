@@ -1,6 +1,17 @@
 @import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
-
+@import 'http://portal/Style%20Library/fface.css';
+.rtl{
+  direction: ltr;
+  text-align: right;
+  align-content: flex-start;
+}
 .personnelAppraisal {
+
+  margin-inline-start: 10px; /* This will be `margin-left` in LTR and `margin-right` in RTL */
+
+  body, button, input, textarea {
+    font-family: 'MyCustomFont', Arial, sans-serif;
+  }
   .container {
     max-width: 700px;
     margin: 0px auto;
@@ -35,6 +46,14 @@
   .description {
     @include ms-font-l;
     @include ms-fontColor-white;
+  }
+
+  .ms-Button {
+    font-family: 'MyCustomFont', Arial, sans-serif !important;
+  }
+
+  .ms-Label {
+    font-family: 'MyCustomFont', Arial, sans-serif !important;
   }
 
   .button {
@@ -72,3 +91,4 @@
     }
   }
 }
+
