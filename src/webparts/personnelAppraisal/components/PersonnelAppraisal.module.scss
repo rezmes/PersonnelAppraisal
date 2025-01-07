@@ -1,17 +1,44 @@
 @import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
 @import 'http://portal/Style%20Library/fface.css';
+// @font-face {
+//   font-family: IRANSansXFANum;
+//   src: url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Bold.otf') format('Open Type'),
+//        url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Bold.ttf')   format('True Type'),
+//        url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Bold.woff')  format('woff'),
+//        url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Bold.woff2') format('woff2'),
+//        url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Regular.otf') format('Open Type'),
+//        url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Regular.ttf')    format('True Type'),
+//        url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Regular.woff')   format('woff'),
+//        url('http://portal/Style%20Library/IRFonts/IRANSansXFaNum-Regular.woff2')  format('woff2');
+// }
+// body {
+//   font-family: IRANSansXFANum !important;
+// }
 .rtl{
-  direction: ltr;
+  direction: rtl;
   text-align: right;
   align-content: flex-start;
 }
+h3, span, button, input, textarea {
+  font-family: IRANSansXFaNum !important;
+
+     direction: rtl;
+    text-align: right;
+     align-content: flex-start;
+}
+i {
+  direction: ltr;
+  display: flex !important;
+align-items: flex-end;
+}
+
 .personnelAppraisal {
 
-  margin-inline-start: 10px; /* This will be `margin-left` in LTR and `margin-right` in RTL */
+  // margin-inline-start: 10px; /* This will be `margin-left` in LTR and `margin-right` in RTL */
 
-  body, button, input, textarea {
-    font-family: 'MyCustomFont', Arial, sans-serif;
-  }
+  // body, button, input, textarea {
+  //   font-family: 'IRANSansXFANum' , Arial, sans-serif;
+  // }
   .container {
     max-width: 700px;
     margin: 0px auto;
@@ -48,12 +75,12 @@
     @include ms-fontColor-white;
   }
 
-  .ms-Button {
-    font-family: 'MyCustomFont', Arial, sans-serif !important;
+  .ms-Button-label {
+    font-family: 'IRANSansXFANum', Arial, sans-serif !important;
   }
 
-  .ms-Label {
-    font-family: 'MyCustomFont', Arial, sans-serif !important;
+  .ms-font-m {
+    font-family: IRANSansXFANum !important;
   }
 
   .button {
@@ -70,7 +97,7 @@
     // Basic Button
     outline: transparent;
     position: relative;
-    font-family: "Segoe UI WestEuropean","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",sans-serif;
+    font-family: IRANSansXFANum , "Segoe UI WestEuropean","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",sans-serif;
     -webkit-font-smoothing: antialiased;
     font-size: $ms-font-size-m;
     font-weight: $ms-font-weight-regular;

@@ -12,8 +12,8 @@ class EmployeeDropdown extends React.Component<IEmployeeDropdownProps, {}> {
     const { employees, selectedEmployee, onChange } = this.props;
     const placeHolderText =
       employees.length === 0
-        ? "All personnel have been evaluated. No more employees to evaluate."
-        : "Choose an employee";
+        ? "همه افراد لیست شما برای این دوره ارزیابی شده اند."
+        : "ارزیابی شونده را انتخاب کنید";
 
     return (
       <Dropdown

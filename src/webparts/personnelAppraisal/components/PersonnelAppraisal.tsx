@@ -635,14 +635,18 @@ export default class PersonnelAppraisal extends React.Component<
     };
   }
 
-  isRtlLanguage(): boolean {
-    const rtlLanguages = ["ar", "he", "fa", "ur"];
-    return rtlLanguages.indexOf(window.navigator.language.split("-")[0]) !== -1;
-  }
+  // isRtlLanguage(): boolean {
+  //   const rtlLanguages = ["ar", "he", "fa", "ur", "fa-IR"];
+  //   return rtlLanguages.indexOf(window.navigator.language.split("-")[0]) !== -1;
+  // }
 
   componentDidMount(): void {
-    const isRtl = this.isRtlLanguage();
-    setRTL(isRtl); // Enable RTL globally for Office UI Fabric
+    const isRtl =
+      this.props.context.pageContext.cultureInfo
+        .isRightToLeft; /* condition to determine if RTL should be applied */
+    console.log("It is rtl ", isRtl);
+    // const isRtl = this.isRtlLanguage();
+    // setRTL(isRtl); // Enable RTL globally for Office UI Fabric
     sp.setup({
       spfxContext: this.props.context,
     });
@@ -814,7 +818,7 @@ export default class PersonnelAppraisal extends React.Component<
       await batch.execute();
 
       this.setState({ isLoading: false });
-      alert("Evaluation submitted successfully.");
+      alert("ارزیابی با موفقیت ثبت شد");
 
       this.loadEmployees();
     } catch (error) {
@@ -842,16 +846,18 @@ export default class PersonnelAppraisal extends React.Component<
       isDialogHidden,
     } = this.state;
 
-    const isRtl = this.isRtlLanguage();
-    // const isRtl =
-    //   this.props.context.pageContext.cultureInfo
-    //     .isRightToLeft; /* condition to determine if RTL should be applied */
-    // console.log("It is rtl ", isRtl);
+    // const isRtl = this.isRtlLanguage();
+
+    const isRtl =
+      this.props.context.pageContext.cultureInfo
+        .isRightToLeft; /* condition to determine if RTL should be applied */
 
     return (
-      <div dir={isRtl ? "rtl" : "ltr"}>
-        <h3>{this.props.description}</h3>
-        {isLoading && <Spinner size={SpinnerSize.large} label="Loading..." />}
+      <div dir={isRtl ? "ltr" : "rtl"}>
+        {/* <h3>{this.props.description}</h3> */}
+        <h3>ارزیابی عملکرد کارکنان</h3>
+
+        {isLoading && <Spinner size={SpinnerSize.large} label="بارگذاری ..." />}
         {errorMessage && <Label style={{ color: "red" }}>{errorMessage}</Label>}
         <EmployeeDropdown
           employees={employees}
@@ -865,7 +871,7 @@ export default class PersonnelAppraisal extends React.Component<
             onScoreChange={this.handleScoreChange}
           />
         )}
-        <PrimaryButton text="Submit" onClick={this.handleSubmit} />
+        <PrimaryButton text="ثبت" onClick={this.handleSubmit} />
         <Dialog
           hidden={isDialogHidden}
           onDismiss={this.closeDialog}
