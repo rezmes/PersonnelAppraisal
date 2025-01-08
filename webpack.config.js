@@ -2,7 +2,7 @@ const webpack = require("webpack");
 
 module.exports = {
   resolve: {
-    fallback: {
+    alias: {
       crypto: require.resolve("crypto-browserify"),
       buffer: require.resolve("buffer"),
       stream: require.resolve("stream-browserify"),
