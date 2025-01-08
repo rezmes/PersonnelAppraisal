@@ -1,5 +1,5 @@
 import * as React from "react";
-
+import "./PersonnelAppraisal.module.scss"; // Import your styles
 interface IQuestion {
   id: number;
   text: string;
@@ -18,8 +18,8 @@ class QuestionTable extends React.Component<IQuestionTableProps, {}> {
       <table>
         <thead>
           <tr>
-            <th>Question</th>
-            <th>Score</th>
+            <th>شاخص ارزیابی</th>
+            <th>امتیاز</th>
           </tr>
         </thead>
         <tbody>
@@ -34,7 +34,9 @@ class QuestionTable extends React.Component<IQuestionTableProps, {}> {
                       name={`question-${question.id}`}
                       value={score}
                       checked={this.props.scores[question.id] === score}
-                      onChange={() => this.props.onScoreChange(question.id, score)}
+                      onChange={() =>
+                        this.props.onScoreChange(question.id, score)
+                      }
                     />
                     {score}
                   </label>

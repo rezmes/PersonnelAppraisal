@@ -1,7 +1,5 @@
 import * as React from "react";
-
 import { sp } from "@pnp/sp/presets/all";
-// import { setRTL } from "office-ui-fabric-react/lib/Utilities";
 import {
   PrimaryButton,
   Spinner,
@@ -15,6 +13,7 @@ import {
 import { IPersonnelAppraisalProps } from "./IPersonnelAppraisalProps";
 import EmployeeDropdown from "./EmployeeDropdown";
 import QuestionTable from "./QuestionTable";
+import EvaluationPeriod from "./EvaluationPeriod"; // Import the new component
 import "./PersonnelAppraisal.module.scss"; // Import your styles
 
 interface IEmployeeOption extends IDropdownOption {
@@ -30,6 +29,7 @@ interface IAppraisalFormState {
   isLoading: boolean;
   errorMessage: string | null;
   isDialogHidden: boolean;
+  evaluationPeriod: string;
 }
 
 import "core-js/es6/array";
@@ -49,20 +49,21 @@ export default class PersonnelAppraisal extends React.Component<
       isLoading: false,
       errorMessage: null,
       isDialogHidden: true,
+      evaluationPeriod: "",
     };
   }
 
   componentDidMount(): void {
-    const isRtl =
-      this.props.context.pageContext.cultureInfo
-        .isRightToLeft; /* condition to determine if RTL should be applied */
-    console.log("It is rtl ", isRtl);
-      sp.setup({
+    sp.setup({
       spfxContext: this.props.context,
     });
 
     this.loadEmployees();
   }
+
+  private handlePeriodLoaded = (period: string): void => {
+    this.setState({ evaluationPeriod: period });
+  };
 
   // Load employees from SharePoint list
   private async loadEmployees(): Promise<void> {
@@ -84,13 +85,11 @@ export default class PersonnelAppraisal extends React.Component<
         .filter(`Evaluator/Name eq '${currentUser.LoginName}'`)
         .get();
 
-      const evaluationPeriod = "Q1-2024";
-
       const evaluatedEmployees = await sp.web.lists
         .getByTitle("EvaluationResults")
         .items.select("EmployeeID/ID", "EvaluationPeriod")
         .expand("EmployeeID")
-        .filter(`EvaluationPeriod eq '${evaluationPeriod}'`)
+        .filter(`EvaluationPeriod eq '${this.state.evaluationPeriod}'`)
         .get();
 
       const evaluatedEmployeeIds = evaluatedEmployees.map(
@@ -190,15 +189,16 @@ export default class PersonnelAppraisal extends React.Component<
 
   // Handle form submission to save evaluation results
   private handleSubmit: () => Promise<void> = async (): Promise<void> => {
-    const { selectedEmployee, scores, questions } = this.state;
+    const { selectedEmployee, scores, questions, evaluationPeriod } =
+      this.state;
 
     if (!selectedEmployee) {
-      this.setState({ errorMessage: "Please select an employee." });
+      this.setState({ errorMessage: ".لطفا یک نفر را انتخاب فرمایید" });
       return;
     }
 
     if (Object.keys(scores).length !== questions.length) {
-      this.setState({ errorMessage: "Please rate all questions." });
+      this.setState({ errorMessage: ".لطفا به همه ی سوالات پاسخ دهید" });
       return;
     }
 
@@ -206,7 +206,6 @@ export default class PersonnelAppraisal extends React.Component<
       this.setState({ isLoading: true, errorMessage: null });
 
       const batch = sp.web.createBatch();
-      const evaluationPeriod = "Q1-2024";
 
       questions.forEach((question) => {
         const weightedScore = (scores[question.id] / 5) * question.weight;
@@ -256,15 +255,14 @@ export default class PersonnelAppraisal extends React.Component<
       isDialogHidden,
     } = this.state;
 
-    // const isRtl = this.isRtlLanguage();
-
-    const isRtl =
-      this.props.context.pageContext.cultureInfo
-        .isRightToLeft; /* condition to determine if RTL should be applied */
+    const isRtl = this.props.context.pageContext.cultureInfo.isRightToLeft;
 
     return (
-      <div dir={isRtl ? "ltr" : "rtl"}>
-        {/* <h3>{this.props.description}</h3> */}
+      <div dir={isRtl ? "rtl" : "ltr"}>
+        <EvaluationPeriod
+          spfxContext={this.props.context}
+          onPeriodLoaded={this.handlePeriodLoaded}
+        />
         <h3>ارزیابی عملکرد کارکنان</h3>
 
         {isLoading && <Spinner size={SpinnerSize.large} label="بارگذاری ..." />}
