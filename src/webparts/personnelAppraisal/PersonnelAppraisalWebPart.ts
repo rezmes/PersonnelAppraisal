@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { Version } from "@microsoft/sp-core-library";
@@ -15,12 +16,13 @@ import { sp } from "@pnp/sp";
 
 export interface IPersonnelAppraisalWebPartProps {
   description: string;
-  selectedDepartment: string;
- }
+  employeeListName: string;
+  evaluationResultsListName: string;
+  evaluationPeriodListName: string;
+  questionBankListName: string;
+}
 
-export default class PersonnelAppraisalWebPart extends BaseClientSideWebPart<
-  IPersonnelAppraisalWebPartProps
-> {
+export default class PersonnelAppraisalWebPart extends BaseClientSideWebPart<IPersonnelAppraisalWebPartProps> {
 
   public onInit(): Promise<void> {
     return super.onInit().then(_ => {
@@ -30,15 +32,16 @@ export default class PersonnelAppraisalWebPart extends BaseClientSideWebPart<
     });
   }
 
-
   public render(): void {
-    // Ensure props match the expected IPersonnelAppraisalProps interface
     const element: React.ReactElement<IPersonnelAppraisalProps> = React.createElement(
       PersonnelAppraisal,
       {
-        description: this.properties.description, // Pass the description prop correctly
-        context: this.context, // Pass context explicitly
-        selectedDepartment: this.properties.selectedDepartment // Ensure this property exists in your WebPart properties
+        description: this.properties.description,
+        context: this.context,
+        employeeListName: this.properties.employeeListName,
+        questionBankListName: this.properties.questionBankListName,
+        evaluationPeriodListName: this.properties.evaluationPeriodListName,
+        evaluationResultsListName: this.properties.evaluationResultsListName
       }
     );
 
@@ -66,6 +69,18 @@ export default class PersonnelAppraisalWebPart extends BaseClientSideWebPart<
               groupFields: [
                 PropertyPaneTextField("description", {
                   label: strings.DescriptionFieldLabel,
+                }),
+                PropertyPaneTextField("employeeListName", {
+                  label: "Employee List Name",
+                }),
+                PropertyPaneTextField("evaluationResultsListName", {
+                  label: "Evaluation Results List Name",
+                }),
+                PropertyPaneTextField("evaluationPeriodListName", {
+                  label: "Evaluation Period List Name",
+                }),
+                PropertyPaneTextField("questionBankListName", {
+                  label: "Question Bank List Name",
                 }),
               ],
             },
