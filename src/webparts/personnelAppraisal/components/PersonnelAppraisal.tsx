@@ -60,6 +60,64 @@ export default class PersonnelAppraisal extends React.Component<
     this.setState({ evaluationPeriod: period });
   };
 
+  // private async loadEmployees(): Promise<void> {
+  //   try {
+  //     this.setState({ isLoading: true });
+  //     const response = await fetch(
+  //       `${this.props.context.pageContext.web.absoluteUrl}/_api/web/currentUser`,
+  //       {
+  //         headers: {
+  //           Accept: "application/json;odata=verbose",
+  //         },
+  //       }
+  //     );
+  //     const currentUser = await response.json();
+  //     console.log("Current User:", currentUser);
+
+  //     const encodedLoginName = encodeURIComponent(currentUser.d.LoginName);
+  //     const listName = encodeURIComponent(this.props.employeeListName);
+
+  //     // Add FirstName and Department fields incrementally
+  //     const employeesUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=ID,Title,FirstName,MechDepartment`;
+  //     console.log(
+  //       "Employees URL with FirstName and MechDepartment:",
+  //       employeesUrl
+  //     );
+
+  //     const employeesResponse = await fetch(employeesUrl, {
+  //       headers: {
+  //         Accept: "application/json;odata=verbose",
+  //       },
+  //     });
+
+  //     if (!employeesResponse.ok) {
+  //       throw new Error(
+  //         `Error fetching employees: ${employeesResponse.statusText}`
+  //       );
+  //     }
+
+  //     const employees = await employeesResponse.json();
+  //     console.log("Employees API Response:", employees);
+
+  //     const employeeOptions: IEmployeeOption[] = employees.d.results.map(
+  //       (emp: any) => ({
+  //         key: emp.ID,
+  //         text: `${emp.FirstName} ${emp.Title}`,
+  //         department: "",
+  //         departmentGuid: "",
+  //       })
+  //     );
+
+  //     this.setState({ employees: employeeOptions, isLoading: false });
+  //   } catch (error) {
+  //     this.setState({
+  //       errorMessage: `Error loading employees: ${error.message}`,
+  //       isLoading: false,
+  //     });
+  //     console.error("Error loading employees:", error);
+  //   }
+  // }
+
   private async loadEmployees(): Promise<void> {
     try {
       this.setState({ isLoading: true });
@@ -72,56 +130,48 @@ export default class PersonnelAppraisal extends React.Component<
         }
       );
       const currentUser = await response.json();
+      console.log("Current User:", currentUser);
 
-      const employeesResponse = await fetch(
-        `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.employeeListName}')/items?$select=ID,Title,FirstName,Department,Evaluator/Name,MechDepartment&$expand=Evaluator&$filter=Evaluator/Name eq '${currentUser.d.LoginName}'`,
-        {
-          headers: {
-            Accept: "application/json;odata=verbose",
-          },
-        }
-      );
+      const encodedLoginName = encodeURIComponent(currentUser.d.LoginName);
+      const listName = encodeURIComponent(this.props.employeeListName);
+
+      // Corrected filter for Evaluator
+      const employeesUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=ID,Title,FirstName,FieldValuesAsText/MechDepartment,Evaluator/Name&$expand=FieldValuesAsText,Evaluator&$filter=Evaluator/Name eq '${encodedLoginName}'`;
+      console.log("Employees URL with corrected filter:", employeesUrl);
+
+      const employeesResponse = await fetch(employeesUrl, {
+        headers: {
+          Accept: "application/json;odata=verbose",
+        },
+      });
+
+      if (!employeesResponse.ok) {
+        throw new Error(
+          `Error fetching employees: ${employeesResponse.statusText}`
+        );
+      }
+
       const employees = await employeesResponse.json();
+      console.log("Employees API Response:", employees);
 
-      const evaluatedEmployeesResponse = await fetch(
-        `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.evaluationResultsListName}')/items?$select=EmployeeID/ID,EvaluationPeriod&$expand=EmployeeID&$filter=EvaluationPeriod eq '${this.state.evaluationPeriod}'`,
-        {
-          headers: {
-            Accept: "application/json;odata=verbose",
-          },
-        }
+      const employeeOptions: IEmployeeOption[] = employees.d.results.map(
+        (emp: any) => ({
+          key: emp.ID,
+          text: `${emp.FirstName} ${emp.Title}`,
+          department: emp.FieldValuesAsText
+            ? emp.FieldValuesAsText.MechDepartment
+            : "",
+          departmentGuid: "",
+        })
       );
-      const evaluatedEmployees = await evaluatedEmployeesResponse.json();
-
-      const evaluatedEmployeeIds = evaluatedEmployees.d.results.map(
-        (evalItem: any) => evalItem.EmployeeID.ID
-      );
-
-      const employeeOptions: IEmployeeOption[] = employees.d.results
-        .filter((emp: any) => evaluatedEmployeeIds.indexOf(emp.ID) === -1)
-        .map((emp: any) => {
-          let departmentText = "";
-          let departmentTermGuid = "";
-          if (emp.MechDepartment && emp.MechDepartment.Label) {
-            departmentText = emp.MechDepartment.Label;
-            departmentTermGuid = emp.MechDepartment.TermGuid;
-          }
-
-          return {
-            key: emp.ID,
-            text: `${emp.FirstName} ${emp.Title}`,
-            department: departmentText,
-            departmentGuid: departmentTermGuid,
-          };
-        });
 
       this.setState({ employees: employeeOptions, isLoading: false });
     } catch (error) {
       this.setState({
-        errorMessage: "Error loading employees.",
+        errorMessage: `Error loading employees: ${error.message}`,
         isLoading: false,
       });
-      console.error(error);
+      console.error("Error loading employees:", error);
     }
   }
 
@@ -152,18 +202,26 @@ export default class PersonnelAppraisal extends React.Component<
     try {
       this.setState({ isLoading: true });
 
-      const questionsResponse = await fetch(
-        `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.questionBankListName}')/items?$select=ID,Title,QuestionWeight,Department`,
-        {
-          headers: {
-            Accept: "application/json;odata=verbose",
-          },
-        }
-      );
+      const questionsUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.questionBankListName}')/items?$select=ID,Title,QuestionWeight,MechDepartment`;
+      console.log("Questions URL:", questionsUrl);
+
+      const questionsResponse = await fetch(questionsUrl, {
+        headers: {
+          Accept: "application/json;odata=verbose",
+        },
+      });
+
+      if (!questionsResponse.ok) {
+        throw new Error(
+          `Error fetching questions: ${questionsResponse.statusText}`
+        );
+      }
+
       const questions = await questionsResponse.json();
+      console.log("Questions API Response:", questions);
 
       const filteredQuestions = questions.d.results.filter(
-        (q: any) => q.Department.TermGuid === selectedDepartmentGuid
+        (q: any) => q.MechDepartment.TermGuid === selectedDepartmentGuid
       );
 
       this.setState({
@@ -177,7 +235,7 @@ export default class PersonnelAppraisal extends React.Component<
       });
     } catch (error) {
       this.setState({
-        errorMessage: "Error loading questions.",
+        errorMessage: `Error loading questions: ${error.message}`,
         isLoading: false,
       });
       console.error("Error fetching questions:", error);
@@ -242,7 +300,7 @@ export default class PersonnelAppraisal extends React.Component<
       this.loadEmployees();
     } catch (error) {
       this.setState({
-        errorMessage: "Error submitting evaluation.",
+        errorMessage: `Error submitting evaluation: ${error.message}`,
         isLoading: false,
       });
       console.error("Error submitting evaluation:", error);
