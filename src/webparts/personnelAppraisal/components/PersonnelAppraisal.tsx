@@ -60,6 +60,64 @@ export default class PersonnelAppraisal extends React.Component<
     this.setState({ evaluationPeriod: period });
   };
 
+  // private async loadEmployees(): Promise<void> {
+  //   try {
+  //     this.setState({ isLoading: true });
+  //     const response = await fetch(
+  //       `${this.props.context.pageContext.web.absoluteUrl}/_api/web/currentUser`,
+  //       {
+  //         headers: {
+  //           Accept: "application/json;odata=verbose",
+  //         },
+  //       }
+  //     );
+  //     const currentUser = await response.json();
+  //     console.log("Current User:", currentUser);
+
+  //     const encodedLoginName = encodeURIComponent(currentUser.d.LoginName);
+  //     const listName = encodeURIComponent(this.props.employeeListName);
+
+  //     // Add FirstName and Department fields incrementally
+  //     const employeesUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=ID,Title,FirstName,MechDepartment`;
+  //     console.log(
+  //       "Employees URL with FirstName and MechDepartment:",
+  //       employeesUrl
+  //     );
+
+  //     const employeesResponse = await fetch(employeesUrl, {
+  //       headers: {
+  //         Accept: "application/json;odata=verbose",
+  //       },
+  //     });
+
+  //     if (!employeesResponse.ok) {
+  //       throw new Error(
+  //         `Error fetching employees: ${employeesResponse.statusText}`
+  //       );
+  //     }
+
+  //     const employees = await employeesResponse.json();
+  //     console.log("Employees API Response:", employees);
+
+  //     const employeeOptions: IEmployeeOption[] = employees.d.results.map(
+  //       (emp: any) => ({
+  //         key: emp.ID,
+  //         text: `${emp.FirstName} ${emp.Title}`,
+  //         department: "",
+  //         departmentGuid: "",
+  //       })
+  //     );
+
+  //     this.setState({ employees: employeeOptions, isLoading: false });
+  //   } catch (error) {
+  //     this.setState({
+  //       errorMessage: `Error loading employees: ${error.message}`,
+  //       isLoading: false,
+  //     });
+  //     console.error("Error loading employees:", error);
+  //   }
+  // }
+
   private async loadEmployees(): Promise<void> {
     try {
       this.setState({ isLoading: true });
@@ -77,9 +135,9 @@ export default class PersonnelAppraisal extends React.Component<
       const encodedLoginName = encodeURIComponent(currentUser.d.LoginName);
       const listName = encodeURIComponent(this.props.employeeListName);
 
-      // Query including MechDepartment fields
-      const employeesUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=ID,Title,FirstName,MechDepartment,Evaluator/Name&$expand=Evaluator&$filter=Evaluator/Name eq '${encodedLoginName}'`;
-      console.log("Employees URL:", employeesUrl);
+      // Corrected filter for Evaluator
+      const employeesUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=ID,Title,FirstName,FieldValuesAsText/MechDepartment,Evaluator/Name&$expand=FieldValuesAsText,Evaluator&$filter=Evaluator/Name eq '${encodedLoginName}'`;
+      console.log("Employees URL with corrected filter:", employeesUrl);
 
       const employeesResponse = await fetch(employeesUrl, {
         headers: {
@@ -97,15 +155,14 @@ export default class PersonnelAppraisal extends React.Component<
       console.log("Employees API Response:", employees);
 
       const employeeOptions: IEmployeeOption[] = employees.d.results.map(
-        (emp: any) => {
-          const department = emp.MechDepartment || {};
-          return {
-            key: emp.ID,
-            text: `${emp.FirstName} ${emp.Title}`,
-            department: department.Label || "Unknown Department",
-            departmentGuid: department.TermGuid || "",
-          };
-        }
+        (emp: any) => ({
+          key: emp.ID,
+          text: `${emp.FirstName} ${emp.Title}`,
+          department: emp.FieldValuesAsText
+            ? emp.FieldValuesAsText.MechDepartment
+            : "",
+          departmentGuid: "",
+        })
       );
 
       this.setState({ employees: employeeOptions, isLoading: false });
@@ -131,8 +188,6 @@ export default class PersonnelAppraisal extends React.Component<
       const selectedDepartmentGuid = selectedEmployee
         ? selectedEmployee.departmentGuid
         : "";
-      console.log("Selected Employee:", selectedEmployee);
-      console.log("Selected Department Guid:", selectedDepartmentGuid);
 
       this.setState(
         { selectedEmployee: option.key as string, questions: [] },
@@ -145,18 +200,9 @@ export default class PersonnelAppraisal extends React.Component<
 
   private async loadQuestions(selectedDepartmentGuid?: string): Promise<void> {
     try {
-      if (!selectedDepartmentGuid) {
-        throw new Error("selectedDepartmentGuid is empty");
-      }
-
       this.setState({ isLoading: true });
 
-      const questionBankListName = encodeURIComponent(
-        this.props.questionBankListName
-      );
-
-      // Retrieve all items from the QuestionBank list
-      const questionsUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${questionBankListName}')/items?$select=ID,Title,QuestionWeight,MechDepartment`;
+      const questionsUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.questionBankListName}')/items?$select=ID,Title,QuestionWeight,MechDepartment`;
       console.log("Questions URL:", questionsUrl);
 
       const questionsResponse = await fetch(questionsUrl, {
@@ -174,11 +220,9 @@ export default class PersonnelAppraisal extends React.Component<
       const questions = await questionsResponse.json();
       console.log("Questions API Response:", questions);
 
-      // Filter the questions on the client-side based on MechDepartment.TermGuid
-      const filteredQuestions = questions.d.results.filter((q: any) => {
-        const department = q.MechDepartment ? q.MechDepartment.TermGuid : "";
-        return department === selectedDepartmentGuid;
-      });
+      const filteredQuestions = questions.d.results.filter(
+        (q: any) => q.MechDepartment.TermGuid === selectedDepartmentGuid
+      );
 
       this.setState({
         questions: filteredQuestions.map((q: any) => ({
@@ -191,7 +235,7 @@ export default class PersonnelAppraisal extends React.Component<
       });
     } catch (error) {
       this.setState({
-        errorMessage: `Error fetching questions: ${error.message}`,
+        errorMessage: `Error loading questions: ${error.message}`,
         isLoading: false,
       });
       console.error("Error fetching questions:", error);
@@ -267,7 +311,7 @@ export default class PersonnelAppraisal extends React.Component<
     this.setState({ isDialogHidden: true });
   };
 
-  public render(): React.ReactElement<any> {
+  render(): React.ReactElement<any> {
     const {
       employees,
       selectedEmployee,
@@ -307,15 +351,17 @@ export default class PersonnelAppraisal extends React.Component<
           onDismiss={this.closeDialog}
           dialogContentProps={{
             type: DialogType.normal,
-            title: "Error",
-            subText: errorMessage,
+            title: "Some Title",
+            subText: "Some subtitle",
+            className: "some-class",
           }}
           modalProps={{
             isBlocking: false,
+            containerClassName: "some-container-class",
           }}
         >
           <DialogFooter>
-            <PrimaryButton onClick={this.closeDialog} text="Close" />
+            <PrimaryButton onClick={this.closeDialog} text="OK" />
           </DialogFooter>
         </Dialog>
       </div>

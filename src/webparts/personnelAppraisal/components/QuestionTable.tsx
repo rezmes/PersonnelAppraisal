@@ -1,7 +1,5 @@
-// export default QuestionTable;
 import * as React from "react";
-import { Label } from "office-ui-fabric-react";
-
+import "./PersonnelAppraisal.module.scss"; // Import your styles
 interface IQuestion {
   id: number;
   text: string;
