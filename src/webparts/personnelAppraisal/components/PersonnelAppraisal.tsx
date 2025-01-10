@@ -22,10 +22,9 @@ export interface IEmployeeOption extends IDropdownOption {
 }
 
 // Define and export the interface separately
-// Define and export the interface separately
 export interface IAppraisalFormState {
   employees: IEmployeeOption[];
-  evaluatedEmployees: { employeeId: number; evaluationPeriod: string }[]; // Add evaluatedEmployees
+  evaluatedEmployees: { employeeId: number; evaluationPeriod: string }[];
   selectedEmployee: string | number | undefined;
   questions: { id: number; text: string; weight: number }[];
   scores: { [questionId: number]: number };
@@ -45,7 +44,7 @@ export default class PersonnelAppraisal extends React.Component<
 
     this.state = {
       employees: [],
-      evaluatedEmployees: [], // Initialize evaluatedEmployees
+      evaluatedEmployees: [],
       selectedEmployee: undefined,
       questions: [],
       scores: {},
@@ -79,7 +78,6 @@ export default class PersonnelAppraisal extends React.Component<
       }
 
       const data = await response.json();
-      console.log("Evaluation Results API Response:", data);
 
       const evaluatedEmployees = data.d.results.map((result: any) => ({
         employeeId: result.EmployeeIDId,
@@ -111,13 +109,11 @@ export default class PersonnelAppraisal extends React.Component<
         }
       );
       const currentUser = await response.json();
-      console.log("Current User:", currentUser);
 
       const encodedLoginName = encodeURIComponent(currentUser.d.LoginName);
       const listName = encodeURIComponent(this.props.employeeListName);
 
       const employeesUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=ID,Title,FirstName,MechDepartment,Evaluator/Name&$expand=Evaluator&$filter=Evaluator/Name eq '${encodedLoginName}'`;
-      console.log("Employees URL with corrected filter:", employeesUrl);
 
       const employeesResponse = await fetch(employeesUrl, {
         headers: {
@@ -132,7 +128,6 @@ export default class PersonnelAppraisal extends React.Component<
       }
 
       const employees = await employeesResponse.json();
-      console.log("Employees API Response:", employees);
 
       const evaluatedEmployees = this.state.evaluatedEmployees;
 
@@ -174,7 +169,6 @@ export default class PersonnelAppraisal extends React.Component<
       const selectedDepartmentGuid = selectedEmployee
         ? selectedEmployee.departmentGuid
         : "";
-      console.log("Selected Department Guid:", selectedDepartmentGuid);
 
       this.setState(
         { selectedEmployee: option.key as string, questions: [] },
@@ -190,7 +184,6 @@ export default class PersonnelAppraisal extends React.Component<
       this.setState({ isLoading: true });
 
       const questionsUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.questionBankListName}')/items?$select=ID,Title,QuestionWeight,MechDepartment`;
-      console.log("Questions URL:", questionsUrl);
 
       const questionsResponse = await fetch(questionsUrl, {
         headers: {
@@ -205,14 +198,12 @@ export default class PersonnelAppraisal extends React.Component<
       }
 
       const questions = await questionsResponse.json();
-      console.log("Questions API Response:", questions);
 
       // Client-Side Filtering based on selectedDepartmentGuid
       const filteredQuestions = questions.d.results.filter((q: any) => {
         const department = q.MechDepartment ? q.MechDepartment.TermGuid : "";
         return department === selectedDepartmentGuid;
       });
-      console.log("Filtered Questions:", filteredQuestions);
 
       this.setState({
         questions: filteredQuestions.map((q: any) => ({
@@ -258,10 +249,25 @@ export default class PersonnelAppraisal extends React.Component<
   //   try {
   //     this.setState({ isLoading: true, errorMessage: null });
 
+  //     const digestResponse = await fetch(
+  //       `${this.props.context.pageContext.web.absoluteUrl}/_api/contextinfo`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           Accept: "application/json;odata=verbose",
+  //         },
+  //       }
+  //     );
+
+  //     const digestData = await digestResponse.json();
+  //     const requestDigest =
+  //       digestData.d.GetContextWebInformation.FormDigestValue;
+
   //     const batchOperations = questions.map((question) => {
   //       const weightedScore = (scores[question.id] / 5) * question.weight;
 
   //       const item = {
+  //         __metadata: { type: "SP.Data.EvaluationResultsListItem" },
   //         EmployeeIDId: selectedEmployee,
   //         QuestionDescription: question.text,
   //         Score: scores[question.id],
@@ -276,10 +282,18 @@ export default class PersonnelAppraisal extends React.Component<
   //           headers: {
   //             Accept: "application/json;odata=verbose",
   //             "Content-Type": "application/json;odata=verbose",
+  //             "X-RequestDigest": requestDigest,
   //           },
   //           body: JSON.stringify(item),
   //         }
-  //       );
+  //       ).then((response) => {
+  //         if (!response.ok) {
+  //           return response.text().then((text) => {
+  //             throw new Error(text);
+  //           });
+  //         }
+  //         return response.json();
+  //       });
   //     });
 
   //     await Promise.all(batchOperations);
@@ -296,6 +310,7 @@ export default class PersonnelAppraisal extends React.Component<
   //     console.error("Error submitting evaluation:", error);
   //   }
   // };
+
   private handleSubmit: () => Promise<void> = async (): Promise<void> => {
     const { selectedEmployee, scores, questions, evaluationPeriod } =
       this.state;
@@ -331,15 +346,13 @@ export default class PersonnelAppraisal extends React.Component<
         const weightedScore = (scores[question.id] / 5) * question.weight;
 
         const item = {
-          __metadata: { type: "SP.Data.EvaluationResultsListItem" }, // Specify the type name here
+          __metadata: { type: "SP.Data.EvaluationResultsListItem" },
           EmployeeIDId: selectedEmployee,
           QuestionDescription: question.text,
           Score: scores[question.id],
           WeightedScore: weightedScore,
           EvaluationPeriod: evaluationPeriod,
         };
-
-        console.log("Submitting Item:", item); // Debug logging
 
         return fetch(
           `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.evaluationResultsListName}')/items`,
@@ -367,7 +380,8 @@ export default class PersonnelAppraisal extends React.Component<
       this.setState({ isLoading: false, questions: [] });
       alert("ارزیابی با موفقیت ثبت شد");
 
-      this.loadEmployees();
+      await this.loadEvaluationResults(); // Load evaluated employees first
+      await this.loadEmployees(); // Then reload the employees list
     } catch (error) {
       this.setState({
         errorMessage: `Error submitting evaluation: ${error.message}`,

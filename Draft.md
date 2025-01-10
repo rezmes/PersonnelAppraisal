@@ -5,7 +5,7 @@ I will send all of my code and you check it needs to any change or not. I prefer
 
 #### _SharePoint 2019 - On-premises_
 
-#### dev.env. : `SPFx@1.4.1 ( node@8.17.0 , react@15.6.2, @pnp/sp@2.0.9, typescript@2.4.2 ,update and upgrade are not options)`
+#### dev.env. : `SPFx@1.4.1 ( node@8.17.0 , react@15.6.2, typescript@2.4.2 ,update and upgrade are not options)`
 
 ```tsx PersonnelAppraisal
 import * as React from "react";
