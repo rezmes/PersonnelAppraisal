@@ -22,8 +22,10 @@ export interface IEmployeeOption extends IDropdownOption {
 }
 
 // Define and export the interface separately
+// Define and export the interface separately
 export interface IAppraisalFormState {
   employees: IEmployeeOption[];
+  evaluatedEmployees: { employeeId: number; evaluationPeriod: string }[]; // Add evaluatedEmployees
   selectedEmployee: string | number | undefined;
   questions: { id: number; text: string; weight: number }[];
   scores: { [questionId: number]: number };
@@ -43,6 +45,7 @@ export default class PersonnelAppraisal extends React.Component<
 
     this.state = {
       employees: [],
+      evaluatedEmployees: [], // Initialize evaluatedEmployees
       selectedEmployee: undefined,
       questions: [],
       scores: {},
@@ -54,7 +57,42 @@ export default class PersonnelAppraisal extends React.Component<
   }
 
   componentDidMount(): void {
+    this.loadEvaluationResults(); // Fetch evaluation results first
     this.loadEmployees();
+  }
+
+  private async loadEvaluationResults(): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.evaluationResultsListName}')/items?$select=EmployeeIDId,EvaluationPeriod`,
+        {
+          headers: {
+            Accept: "application/json;odata=verbose",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Error fetching evaluation results: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("Evaluation Results API Response:", data);
+
+      const evaluatedEmployees = data.d.results.map((result: any) => ({
+        employeeId: result.EmployeeIDId,
+        evaluationPeriod: result.EvaluationPeriod,
+      }));
+
+      this.setState({ evaluatedEmployees: evaluatedEmployees });
+    } catch (error) {
+      this.setState({
+        errorMessage: `Error loading evaluation results: ${error.message}`,
+      });
+      console.error("Error loading evaluation results:", error);
+    }
   }
 
   private handlePeriodLoaded = (period: string): void => {
@@ -78,7 +116,6 @@ export default class PersonnelAppraisal extends React.Component<
       const encodedLoginName = encodeURIComponent(currentUser.d.LoginName);
       const listName = encodeURIComponent(this.props.employeeListName);
 
-      // Simplified filter for Evaluator
       const employeesUrl = `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${listName}')/items?$select=ID,Title,FirstName,MechDepartment,Evaluator/Name&$expand=Evaluator&$filter=Evaluator/Name eq '${encodedLoginName}'`;
       console.log("Employees URL with corrected filter:", employeesUrl);
 
@@ -97,14 +134,22 @@ export default class PersonnelAppraisal extends React.Component<
       const employees = await employeesResponse.json();
       console.log("Employees API Response:", employees);
 
-      const employeeOptions: IEmployeeOption[] = employees.d.results.map(
-        (emp: any) => ({
+      const evaluatedEmployees = this.state.evaluatedEmployees;
+
+      const employeeOptions: IEmployeeOption[] = employees.d.results
+        .filter((emp: any) => {
+          return !evaluatedEmployees.some(
+            (evaluated: any) =>
+              evaluated.employeeId === emp.ID &&
+              evaluated.evaluationPeriod === this.state.evaluationPeriod
+          );
+        })
+        .map((emp: any) => ({
           key: emp.ID,
           text: `${emp.FirstName} ${emp.Title}`,
           department: emp.MechDepartment ? emp.MechDepartment.Label : "",
           departmentGuid: emp.MechDepartment ? emp.MechDepartment.TermGuid : "",
-        })
-      );
+        }));
 
       this.setState({ employees: employeeOptions, isLoading: false });
     } catch (error) {
