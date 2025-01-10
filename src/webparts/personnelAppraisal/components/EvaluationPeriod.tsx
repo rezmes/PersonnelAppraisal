@@ -1,16 +1,17 @@
 import * as React from "react";
-
-interface IEvaluationPeriodState {
+// Define and export the interfaces separately
+export interface IEvaluationPeriodState {
   evaluationPeriod: string;
   isLoading: boolean;
   errorMessage: string | null;
 }
 
-interface IEvaluationPeriodProps {
+export interface IEvaluationPeriodProps {
   spfxContext: any;
   onPeriodLoaded: (period: string) => void;
 }
 
+// Use the interfaces in the class definition
 class EvaluationPeriod extends React.Component<
   IEvaluationPeriodProps,
   IEvaluationPeriodState

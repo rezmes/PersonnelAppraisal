@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Dropdown, IDropdownOption } from "office-ui-fabric-react";
 
-interface IEmployeeDropdownProps {
+export interface IEmployeeDropdownProps {
   employees: IDropdownOption[];
   selectedEmployee: string | number | undefined;
   onChange: (option?: IDropdownOption) => void;
@@ -14,7 +14,6 @@ class EmployeeDropdown extends React.Component<IEmployeeDropdownProps, {}> {
       employees.length === 0
         ? "همه افراد لیست شما برای این دوره ارزیابی شده اند."
         : "ارزیابی شونده را انتخاب کنید";
-
     return (
       <Dropdown
         placeHolder={placeHolderText}
@@ -25,5 +24,4 @@ class EmployeeDropdown extends React.Component<IEmployeeDropdownProps, {}> {
     );
   }
 }
-
 export default EmployeeDropdown;

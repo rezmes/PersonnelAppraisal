@@ -1,19 +1,21 @@
 import * as React from "react";
 import "./PersonnelAppraisal.module.scss"; // Import your styles
-interface IQuestion {
+
+export interface IQuestion {
   id: number;
   text: string;
   weight: number;
 }
 
-interface IQuestionTableProps {
+// Exporting the interface separately
+export interface IQuestionTableProps {
   questions: IQuestion[];
   scores: { [questionId: number]: number };
   onScoreChange: (questionId: number, score: number) => void;
 }
 
 class QuestionTable extends React.Component<IQuestionTableProps, {}> {
-  render() {
+  public render() {
     return (
       <table>
         <thead>
