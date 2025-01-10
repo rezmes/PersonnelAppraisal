@@ -196,6 +196,61 @@ export default class PersonnelAppraisal extends React.Component<
     }));
   };
 
+  // private handleSubmit: () => Promise<void> = async (): Promise<void> => {
+  //   const { selectedEmployee, scores, questions, evaluationPeriod } =
+  //     this.state;
+
+  //   if (!selectedEmployee) {
+  //     this.setState({ errorMessage: "Please select an employee." });
+  //     return;
+  //   }
+
+  //   if (Object.keys(scores).length !== questions.length) {
+  //     this.setState({ errorMessage: "Please rate all questions." });
+  //     return;
+  //   }
+
+  //   try {
+  //     this.setState({ isLoading: true, errorMessage: null });
+
+  //     const batchOperations = questions.map((question) => {
+  //       const weightedScore = (scores[question.id] / 5) * question.weight;
+
+  //       const item = {
+  //         EmployeeIDId: selectedEmployee,
+  //         QuestionDescription: question.text,
+  //         Score: scores[question.id],
+  //         WeightedScore: weightedScore,
+  //         EvaluationPeriod: evaluationPeriod,
+  //       };
+
+  //       return fetch(
+  //         `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.evaluationResultsListName}')/items`,
+  //         {
+  //           method: "POST",
+  //           headers: {
+  //             Accept: "application/json;odata=verbose",
+  //             "Content-Type": "application/json;odata=verbose",
+  //           },
+  //           body: JSON.stringify(item),
+  //         }
+  //       );
+  //     });
+
+  //     await Promise.all(batchOperations);
+
+  //     this.setState({ isLoading: false, questions: [] });
+  //     alert("ارزیابی با موفقیت ثبت شد");
+
+  //     this.loadEmployees();
+  //   } catch (error) {
+  //     this.setState({
+  //       errorMessage: `Error submitting evaluation: ${error.message}`,
+  //       isLoading: false,
+  //     });
+  //     console.error("Error submitting evaluation:", error);
+  //   }
+  // };
   private handleSubmit: () => Promise<void> = async (): Promise<void> => {
     const { selectedEmployee, scores, questions, evaluationPeriod } =
       this.state;
@@ -213,16 +268,33 @@ export default class PersonnelAppraisal extends React.Component<
     try {
       this.setState({ isLoading: true, errorMessage: null });
 
+      const digestResponse = await fetch(
+        `${this.props.context.pageContext.web.absoluteUrl}/_api/contextinfo`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json;odata=verbose",
+          },
+        }
+      );
+
+      const digestData = await digestResponse.json();
+      const requestDigest =
+        digestData.d.GetContextWebInformation.FormDigestValue;
+
       const batchOperations = questions.map((question) => {
         const weightedScore = (scores[question.id] / 5) * question.weight;
 
         const item = {
+          __metadata: { type: "SP.Data.EvaluationResultsListItem" }, // Specify the type name here
           EmployeeIDId: selectedEmployee,
           QuestionDescription: question.text,
           Score: scores[question.id],
           WeightedScore: weightedScore,
           EvaluationPeriod: evaluationPeriod,
         };
+
+        console.log("Submitting Item:", item); // Debug logging
 
         return fetch(
           `${this.props.context.pageContext.web.absoluteUrl}/_api/web/lists/getbytitle('${this.props.evaluationResultsListName}')/items`,
@@ -231,10 +303,18 @@ export default class PersonnelAppraisal extends React.Component<
             headers: {
               Accept: "application/json;odata=verbose",
               "Content-Type": "application/json;odata=verbose",
+              "X-RequestDigest": requestDigest,
             },
             body: JSON.stringify(item),
           }
-        );
+        ).then((response) => {
+          if (!response.ok) {
+            return response.text().then((text) => {
+              throw new Error(text);
+            });
+          }
+          return response.json();
+        });
       });
 
       await Promise.all(batchOperations);
