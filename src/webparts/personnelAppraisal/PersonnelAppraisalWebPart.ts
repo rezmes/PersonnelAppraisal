@@ -41,9 +41,9 @@ export default class PersonnelAppraisalWebPart extends BaseClientSideWebPart<IPe
     ReactDom.unmountComponentAtNode(this.domElement);
   }
 
-  protected get dataVersion(): Version {
-    return Version.parse('1.0');
-  }
+  // protected get dataVersion(): Version {
+  //   return Version.parse('1.0');
+  // }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
     return {
